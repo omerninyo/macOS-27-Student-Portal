@@ -1,0 +1,202 @@
+# שיעור 05: אפליקציות ותהליכים
+**מדריך עזר לתלמיד**
+
+---
+
+## מטרות השיעור
+
+* **ערוצי התקנה ב-macOS** - הכרת שלושת ערוצי ההתקנה (App Store, DMG, PKG) ומבנה ה-Application Bundle.
+* **מנגנון ה-Sandbox ואיפוס אפליקציות** - הבנת בידוד האפליקציות ב-Containers והיכן נשמרים קבצי ההגדרות והמידע.
+* **אבחון וניהול תהליכים** - שליטה בכלים לאבחון עומסים ואילוץ סגירה (Force Quit) של תהליכים תקועים דרך ה-GUI והטרמינל.
+* **הפצת תוכנה ארגונית** - הכרת מנגנון Apps & Books (VPP) וחנות ה-Self Service בסביבת MDM.
+
+---
+
+## 🎧 האזנה לסיכום — לפני או אחרי השיעור
+
+<!-- פודקאסט NotebookLM מתוך Captivate -->
+<div style="width: 100%; height: 200px; margin-bottom: 20px; border-radius: 6px; overflow: hidden;"><iframe style="width: 100%; height: 200px;" frameborder="no" scrolling="no" allow="clipboard-write" seamless src="https://player.captivate.fm/episode/57c8a1df-bbc5-4e2e-9986-b6e4b0e04f4e/"></iframe></div>
+
+---
+
+## מושגי יסוד
+
+| מושג | הסבר |
+|---|---|
+| **App Store** | החנות הרשמית של אפל. כל אפליקציה עוברת ביקורת, נוטריזציה ופועלת תחת Sandbox |
+| **DMG (Disk Image)** | כונן וירטואלי. לחיצה כפולה = Mount. גרירה ל-Applications = התקנה. Eject = חובה בסוף |
+| **PKG (Package)** | מתקין מערכתי. מפזר קבצים לנתיבים מוגנים → תמיד ידרוש סיסמת Admin |
+| **Gatekeeper** | שוטר הכניסה של macOS — בודק שכל אפליקציה חתומה ואושרה על ידי אפל |
+| **Notarization** | סריקת אפליקציה אוטומטית על ידי אפל לפני שמותר לה לרוץ |
+| **Sandbox** | בועת בידוד — אפליקציה לא יכולה לגשת לקבצים מחוץ לה ללא אישור |
+| **Container** | תיקיית הבית של אפליקציית Sandbox. נמצא ב-`~/Library/Containers/[Bundle ID]` |
+| **Force Quit** | סגירת תהליך תקוע ללא שמירה (שליחת `SIGKILL`) |
+| **VPP / ABM** | מנגנון רכישת רישיונות ארגוני. הרישיון שייך לארגון, לא למשתמש |
+| **Self Service** | חנות אפליקציות פרטית של הארגון — התקנה ללא Admin וללא Apple ID אישי |
+
+---
+
+## חלק 1 — סוגי התקנה
+
+### איפה זה ב-Finder
+
+```
+קובץ DMG:  הורדות (Downloads) → לחיצה כפולה → Volume ב-Sidebar → גרור ל-Applications
+קובץ PKG:  לחיצה כפולה → אשף התקנה → Admin נדרש
+App Store:  לחפש, ללחוץ הורד — הכל אוטומטי
+```
+
+### שינוי חשוב ב-Tahoe
+
+!!! important
+    אפליקציה שלא מאושרת — **קליק ימני → Open לא עובד יותר ב-Tahoe**.
+    הדרך היחידה: `System Settings → Privacy & Security → גלול מטה → Open Anyway`
+
+> *← זוכרים את מנגנון ה-Gatekeeper ותגית ההסגר (`com.apple.quarantine`) שלמדנו בשיעור 03? ב-macOS 26 Tahoe אפל סגרה את קיצור הדרך של קליק ימני כדי לחייב מעבר מודע דרך מסך הגדרות האבטחה.*
+
+---
+
+## חלק 2 — Sandbox ואיפוס אפליקציות
+
+### נתיבים חשובים
+
+> *← זוכרים משיעור 02 כי תיקיית ה-Library בתיקיית הבית שלכם (`~/Library`) היא המרחב האישי של המשתמש? באופן מסורתי, שם האפליקציות שומרות את ההגדרות והמידע שלהן.*
+> *← בשיעור 06 (מערכת הקבצים APFS) נלמד לעומק על ארבעת מרחבי המערכת (User, Local, Network, System Domains) ועל מיקום הנתונים בכל אחד מהם.*
+
+| סוג אפליקציה | היכן נשמרות ההגדרות והמידע? | האם יש גישה חופשית למחשב? |
+|---|---|---|
+| **אפליקציה "רגילה" (ללא Sandbox)** | `~/Library/Preferences/` וגם `~/Library/Application Support/` | **כן** (סכנת אבטחה אם האפליקציה נפרצת) |
+| **אפליקציית Sandbox** | נכלאת בתוך `~/Library/Containers/[Bundle ID]/` | **לא** (דורשת אישור מפורש מ-Powerbox/TCC) |
+
+### סדר נכון לאיפוס אפליקציה
+
+1. סגור לחלוטין: `Cmd+Q`
+2. פתח Finder → Go → החזק `Option` → **Library**
+3. היכנס ל-`Containers/` → מצא את תיקיית האפליקציה
+4. העבר לאשפה (Trash) ורוקן
+5. פתח מחדש → מסך "ברוכים הבאים" = האיפוס הצליח
+
+!!! note
+    אפליקציה שנמחקה מ-`/Applications/` **אינה** מוחקת את ה-Container!
+    ה-Container חייב להימחק בנפרד.
+
+---
+
+## חלק 3 — Force Quit
+
+### 4 הדרכים
+
+| דרך | איך |
+|---|---|
+| **הכי מהיר** | `Cmd + Option + Esc` |
+| **Dock** | קליק ימני על האייקון + החזק `Option` → Force Quit |
+| **אבחון וסגירה** | Activity Monitor → בדיקת משאבי CPU/RAM ו-Open Files לפני לחיצה על `X` |
+| **טרמינל (CLI)** | פקודת `killall AppName` לסגירה מיידית מרחוק או כשהעכבר קפוא |
+
+### Quit מול Force Quit
+
+| פעולה | מה נשלח | תוצאה |
+|---|---|---|
+| Quit רגיל | `SIGTERM` | אפליקציה שומרת ומתרוקנת בסדר |
+| Force Quit | `SIGKILL` | הקרנל רוצח מיידית — **ללא שמירה** |
+
+> *← בשיעור 08 (שירותי מערכת ודימונים) נלמד כיצד תהליכי רקע מנוהלים על ידי `launchd`, ומה קורה כאשר תהליך מוגדר כ-`KeepAlive` ומזניק את עצמו מחדש מיד לאחר שמבצעים לו Force Quit.*
+
+---
+
+## חלק 4 — VPP ו-Self Service
+
+### הזרימה הארגונית
+
+```
+Apple Business Manager (ABM)
+        ↓ רישיונות
+   שרת MDM ארגוני
+        ↓ Silent Install
+    מחשב העובד
+        ↓ 
+  Self Service (קטלוג פרטי לעובד)
+```
+
+**התוצאה:** עובד לוחץ "התקן" — MDM מתקין ברקע — **ללא Admin, ללא Apple ID אישי**
+
+---
+
+## פקודות Terminal — נספח
+
+!!! note
+    ה-Terminal לא נדרש לתרגילי השיעור. פקודות אלו הן הרחבה למי שמעוניין.
+
+```bash
+# עגינת DMG ידנית
+hdiutil attach /path/to/image.dmg
+
+# ניתוק DMG
+hdiutil detach /Volumes/ImageName
+
+# התקנת PKG שקטה (לסקריפטים של IT)
+sudo installer -pkg /path/to/file.pkg -target /
+
+# איפוס הגדרות אפליקציה (Preferences בלבד, לא Container)
+defaults delete com.apple.Safari
+
+# ריקון מטמון הגדרות (אחרי מחיקת Container)
+killall cfprefsd
+
+# בדיקת חתימת PKG
+pkgutil --check-signature /path/to/file.pkg
+
+# התקנת Rosetta 2 שקטה
+softwareupdate --install-rosetta --agree-to-license
+```
+
+
+---
+
+## חידושי ניהול אפליקציות וסוף עידן Rosetta 2 ב-macOS 27 (Golden Gate)
+
+* **הספירה לאחור לסגירת Rosetta 2 (קריטי לצוותי IT!):** אפל הודיעה רשמית כי **macOS 27 היא מערכת ההפעלה האחרונה שתתמוך באופן מלא ב-Rosetta 2**. החל מהגרסה הבאה (`macOS 28`), אפליקציות שנכתבו למעבדי Intel בלבד יפסיקו להיפתח! ב-macOS 27 נוספו התראות משתמש וביקורת אפליקציות Intel מותקנות תחת `System Settings > General > About` כדי לאפשר לצוותי ה-IT לנקות תוכנות מורשת מבעוד מועד.
+* **ניקוי מלא באוטומציה בהסרת חבילות DDM (Package Uninstall Cleanup):** כאשר מנהל IT מסיר הגדרת חבילה שנפרסה באמצעות Declarative Device Management ב-macOS 27, המערכת מוחקת ומנקה אוטומטית את כל הקבצים והבינאריים שהותקנו על ידה (פתרון לכאב ראש ארוך-שנים של שאריות קובצי PKG!).
+* **אימות קריפטוגרפי להגדרות אפליקציה ורכישת מנויים בכמות גדולה:** תצורות אפליקציה ב-DDM נקשרות קריפטוגרפית לחומרת המק (Managed Device Attestation), וב-Apple Business Manager ניתן כעת לרכוש ולנהל **מנויי אפליקציות (App Subscriptions)** ברישוי ארגוני ממש כמו רישיונות חד-פעמיים.
+
+!!! info "בשטח עם ציי macOS 26 (Tahoe) - השוואה במכונה וירטואלית"
+    במחשבי **macOS 26**, מנוע Rosetta 2 פועל בשקט מוחלט ללא אזהרות סגירה עתידיות, והסרת חבילות PKG מנוהלות עדיין דורשת סקריפטי ניקוי ידניים של ה-IT.
+
+---
+
+## קישורים ולקריאה נוספת
+
+- [Check app installation and processes on Mac — Apple Support](https://support.apple.com/guide/apple-platform-support/check-app-installation-and-processes-apda5f8a096c/web)
+- [Learn about App Store security protections](https://support.apple.com/guide/apple-platform-support/learn-about-app-store-security-protections-apd1a7b8e19c/web)
+- [Distribute content with mobile device management](https://support.apple.com/guide/deployment/distribute-content-depe210182ce/web)
+- [Explainer: the app sandbox — Eclectic Light](https://eclecticlight.co/2020/09/24/explainer-the-app-sandbox/)
+
+---
+
+## 🎬 סרטון סיכום
+
+<!-- סרטון סיכום מתוך YouTube -->
+<div style="margin-bottom: 20px; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <iframe width="100%" height="450" src="https://www.youtube.com/embed/z_52E-9epcY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+---
+
+## עזרים ויזואליים
+
+!!! tip "המחשה ויזואלית (עזר לתלמיד)"
+    תמונות אלו ממחישות את הממשק או המנגנון הרלוונטי לנושא השיעור.
+
+![Slide103_image33](../assets/images/Lesson_05/L05_LegacySlide_Slide103_image33.jpg)
+![Slide121_image134](../assets/images/Lesson_05/L05_LegacySlide_Slide121_image134.jpg)
+![Slide12_image13](../assets/images/Lesson_05/L05_LegacySlide_Slide12_image13.png)
+![Slide12_image14](../assets/images/Lesson_05/L05_LegacySlide_Slide12_image14.png)
+![Slide12_image17](../assets/images/Lesson_05/L05_LegacySlide_Slide12_image17.png)
+![Slide32_image51](../assets/images/Lesson_05/L05_LegacySlide_Slide32_image51.png)
+![Slide39_image52](../assets/images/Lesson_05/L05_LegacySlide_Slide39_image52.png)
+![Slide66_image11](../assets/images/Lesson_05/L05_LegacySlide_Slide66_image11.jpg)
+![Slide75_image89](../assets/images/Lesson_05/L05_LegacySlide_Slide75_image89.png)
+![26-Tahoe-App-Store-scaled](../assets/images/Lesson_05/L05_TahoeUI_26-Tahoe-App-Store-scaled.png)
+![26-Tahoe-Force-Quit-scaled](../assets/images/Lesson_05/L05_TahoeUI_26-Tahoe-Force-Quit-scaled.png)
+![GG27 App Store](../assets/images/GoldenGate_UI/GG27_27-Golden-Gate-App-Store.jpg)
+![GG27 Force Quit](../assets/images/GoldenGate_UI/GG27_27-Golden-Gate-Force-Quit.jpg)

@@ -1,0 +1,142 @@
+site_name: "פורטל הלימודים של Wediggit: קורס תמיכה וניהול macOS 27"
+site_description: "Student Portal for the Wediggit macOS 27 Golden Gate Enterprise Course"
+site_author: "Wediggit"
+site_url: "https://omerninyo.github.io/macOS-27-Student-Portal/"
+
+theme:
+  name: material
+  logo: assets/images/Wediggit_Logo_Black.png
+  favicon: assets/images/Wediggit_Logo_Black.png
+  font:
+    text: Assistant
+    code: Roboto Mono
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.path
+    - toc.integrate
+    - search.highlight
+    - navigation.footer
+    - navigation.top
+
+plugins:
+  - search
+  - i18n:
+      languages:
+        - locale: he
+          default: true
+          name: עברית
+          build: true
+        - locale: en
+          name: English
+          build: true
+          nav_translations:
+            עמוד הבית: Home
+            מדריך עזר: Learning Guide
+            תרגול מעשי: Hands-On Lab
+            'שיעור 1: התקנה, הכרה ויישור קו': 'Lesson 1: Installation, Orientation and Baseline'
+            'שיעור 2: ניהול משתמשים ואבטחת נתונים': 'Lesson 2: User Management and Data Security'
+            'שיעור 3: אבטחת מידע': 'Lesson 3: Security'
+            'שיעור 4: הצפנה ומפתחות': 'Lesson 4: Encryption and Keys'
+            'שיעור 5: אפליקציות ותהליכים': 'Lesson 5: Applications and Processes'
+            'שיעור 6: מערכת הקבצים (APFS)': 'Lesson 6: File System (APFS)'
+            'שיעור 7: גיבוי ושחזור': 'Lesson 7: Backup and Restore'
+            'שיעור 8: טרמינל ושירותי רקע': 'Lesson 8: Terminal and Background Services'
+            'שיעור 9: רשתות': 'Lesson 9: Networking'
+            'שיעור 10: שיתוף וגישה מרחוק': 'Lesson 10: Sharing and Remote Access'
+            'שיעור 11: ציוד היקפי': 'Lesson 11: Peripherals'
+            'שיעור 12: עדכונים ושדרוגים': 'Lesson 12: Updates and Upgrades'
+            'שיעור 13: תהליך האתחול': 'Lesson 13: The Boot Process'
+            'שיעור 14: סביבת שחזור ומחיקה': 'Lesson 14: Recovery Environment and Erase'
+            'שיעור 15: דיאגנוסטיקה': 'Lesson 15: Diagnostics'
+            'שיעור 16: ניתוח לוגים (חדר בריחה)': 'Lesson 16: Log Analysis (Escape Room)'
+
+extra_css:
+  - stylesheets/custom_theme.css
+
+markdown_extensions:
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+# The nav section will be appended here by sync_assets.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+nav:
+  - עמוד הבית: index.md
+  - 'שיעור 1: התקנה, הכרה ויישור קו':
+      - מדריך עזר: Lesson_01/Learning_Guide.md
+      - תרגול מעשי: Lesson_01/Hands_On_Lab.md
+  - 'שיעור 2: ניהול משתמשים ואבטחת נתונים':
+      - מדריך עזר: Lesson_02/Learning_Guide.md
+      - תרגול מעשי: Lesson_02/Hands_On_Lab.md
+  - 'שיעור 3: אבטחת מידע':
+      - מדריך עזר: Lesson_03/Learning_Guide.md
+      - תרגול מעשי: Lesson_03/Hands_On_Lab.md
+  - 'שיעור 4: הצפנה ומפתחות':
+      - מדריך עזר: Lesson_04/Learning_Guide.md
+      - תרגול מעשי: Lesson_04/Hands_On_Lab.md
+  - 'שיעור 5: אפליקציות ותהליכים':
+      - מדריך עזר: Lesson_05/Learning_Guide.md
+      - תרגול מעשי: Lesson_05/Hands_On_Lab.md
+  - 'שיעור 6: מערכת הקבצים (APFS)':
+      - מדריך עזר: Lesson_06/Learning_Guide.md
+      - תרגול מעשי: Lesson_06/Hands_On_Lab.md
+  - 'שיעור 7: גיבוי ושחזור':
+      - מדריך עזר: Lesson_07/Learning_Guide.md
+      - תרגול מעשי: Lesson_07/Hands_On_Lab.md
+  - 'שיעור 8: טרמינל ושירותי רקע':
+      - מדריך עזר: Lesson_08/Learning_Guide.md
+      - תרגול מעשי: Lesson_08/Hands_On_Lab.md
+  - 'שיעור 9: רשתות':
+      - מדריך עזר: Lesson_09/Learning_Guide.md
+      - תרגול מעשי: Lesson_09/Hands_On_Lab.md
+  - 'שיעור 10: שיתוף וגישה מרחוק':
+      - מדריך עזר: Lesson_10/Learning_Guide.md
+      - תרגול מעשי: Lesson_10/Hands_On_Lab.md
+  - 'שיעור 11: ציוד היקפי':
+      - מדריך עזר: Lesson_11/Learning_Guide.md
+      - תרגול מעשי: Lesson_11/Hands_On_Lab.md
+  - 'שיעור 12: עדכונים ושדרוגים':
+      - מדריך עזר: Lesson_12/Learning_Guide.md
+      - תרגול מעשי: Lesson_12/Hands_On_Lab.md
+  - 'שיעור 13: תהליך האתחול':
+      - מדריך עזר: Lesson_13/Learning_Guide.md
+      - תרגול מעשי: Lesson_13/Hands_On_Lab.md
+  - 'שיעור 14: סביבת שחזור ומחיקה':
+      - מדריך עזר: Lesson_14/Learning_Guide.md
+      - תרגול מעשי: Lesson_14/Hands_On_Lab.md
+  - 'שיעור 15: דיאגנוסטיקה':
+      - מדריך עזר: Lesson_15/Learning_Guide.md
+      - תרגול מעשי: Lesson_15/Hands_On_Lab.md
+  - 'שיעור 16: ניתוח לוגים (חדר בריחה)':
+      - מדריך עזר: Lesson_16/Learning_Guide.md
+      - תרגול מעשי: Lesson_16/Hands_On_Lab.md

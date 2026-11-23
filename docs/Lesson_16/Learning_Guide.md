@@ -1,0 +1,183 @@
+# שיעור 16: ניתוח לוגים
+**מדריך עזר לתלמיד**
+
+---
+
+## מטרות השיעור
+
+* **מערכת הלוגים האחודה (`Unified Logging System`)** - הבנת המעבר מקבצי טקסט לקבצי `.tracev3` בינאריים וההפרדה בין לוגים בזיכרון (`Volatile`) לדיסק (`Persist`).
+* **עבודה עם אפליקציית `Console` ודוחות קריסה** - סינון רעשים בזמן אמת (`Process`, `Subsystem`), שמירת חיפושים ופענוח דוחות `.ips` ו-`Kernel Panic`.
+* **שליטה בפקודת `log` ואיסוף `Sysdiagnose`** - תחקור היסטורי באמצעות `Predicates` בטרמינל והפקת ארכיון דיאגנוסטיקה מערכתי מלא.
+* **איתור "האקדח המעשן" בתקלות `MDM` ורשת** - חקירת כשלי תקשורת של `apsd` (פורט `5223`) וזיהוי חסימות `Firewall` או `SSL Inspection`.
+
+---
+
+## 🎧 האזנה לסיכום — לפני או אחרי השיעור
+
+<!-- פודקאסט NotebookLM מתוך Captivate -->
+<div style="width: 100%; height: 200px; margin-bottom: 20px; border-radius: 6px; overflow: hidden;"><iframe style="width: 100%; height: 200px;" frameborder="no" scrolling="no" allow="clipboard-write" seamless src="https://player.captivate.fm/episode/8c719c94-f488-4b97-8408-77cc77048926/"></iframe></div>
+
+---
+
+## מילון מושגים (Glossary)
+
+* **Unified Logging System:** מערכת הרישום המודרנית של Apple המחליפה את קבצי הטקסט הישנים (syslog). המערכת שומרת נתונים בפורמט בינארי דחוס בזיכרון ובדיסק, ומחייבת שימוש בכלים ייעודיים (Console.app או `log`) לקריאתם. (הוצגה לראשונה ב-2016 עם macOS Sierra כדי לפתור בעיות של הצפת קובצי לוג והאטת המערכת).
+* **Console.app:** האפליקציה הגרפית המובנית ב-macOS לצפייה בלוגים. מיועדת בעיקר לצפייה בזמן אמת (Live Streaming) או לפתיחת קבצי ארכיון של לוגים (`.logarchive`). משתמשים רבים מחשיבים אותה ככלי ש"נחטף" מהם כיוון שאינה מאפשרת יותר חיפוש יעיל אחורה בהיסטוריית הלוגים.
+* **Subsystem:** קטגוריה או תת-מערכת של אפליקציה שמייצרת את הלוג (לדוגמה: `com.apple.mdm` או `com.apple.TimeMachine`). חיוני לסינון רעשים בחיפוש לוגים.
+* **Process:** התהליך (קובץ ההרצה או ה-Daemon) שייצר בפועל את שורת הלוג. מיוצג לרוב על ידי שם קובץ ההרצה.
+* **Sysdiagnose:** תהליך אבחון מערכתי שאוסף מאות קבצי לוג, תצורה, ופרופילים מקומיים אל תוך קובץ ארכיון אחד (`.tar.gz`) לטובת ניתוח עומק של תקלות קריטיות (או לפתיחת כרטיס תמיכה מול Apple/ספק ה-MDM).
+* **Predicates:** תחביר סינון מתקדם המאפשר לשלוף לוגים ספציפיים בלבד מתוך אלפי השורות הנכתבות מדי שנייה.
+* **Volatile / Non-Volatile Logs:** לוגים רגילים שנשמרים בזיכרון ה-RAM (Volatile) ונמחקים בהפעלה מחדש, לעומת לוגים הנכתבים לדיסק הקשיח (Non-Volatile) לאחסון לטווח ארוך יותר.
+
+---
+
+## פקודות מסוף לניהול ואבחון לוגים (The `log` Command)
+
+הפקודה `log` היא כלי העבודה המרכזי לתחקור היסטורי של ה-Unified Logging System, מכיוון ש-Console.app כברירת מחדל לא מציגה היסטוריה מלאה.
+
+!!! important
+    הפקודה `log show` ללא מסנן עלולה להציג מיליוני שורות ולתקע את המסוף. תמיד לשלב `--last` או `--predicate` — פקודה גולמית שאינה קראה למשתמש מִנוסין.
+
+### צפייה בסיסית וסינון זמנים
+
+* **`log show`**
+  מציג את כל הלוגים השמורים בדיסק (פקודה זו עשויה להציג מיליוני שורות ולתקוע את המסוף אם לא תסונן).
+
+* **`log show --last 10m`**
+  הצגת כל הלוגים שנכתבו ב-10 הדקות האחרונות. (ניתן להשתמש ב-`h` לשעות או `d` לימים).
+
+* **`log show --start "2026-06-18 09:00:00" --end "2026-06-18 09:30:00"`**
+  הצגת לוגים מתוך חלון זמן ספציפי במדויק.
+
+### סינון מתקדם באמצעות Predicates
+הכוח האמיתי של `log show` הוא היכולת לסנן לפי תהליך, תת-מערכת או תוכן ספציפי:
+
+* **`log show --predicate 'process == "kernel"'`**
+  הצגת לוגים שנוצרו אך ורק על ידי הקרנל.
+
+* **`log show --predicate 'subsystem == "com.apple.TimeMachine"' --info`**
+  הצגת תהליכי גיבוי של Time Machine, כולל הודעות ברמת Info.
+
+* **`log show --predicate 'eventMessage CONTAINS "error"'`**
+  חיפוש של המילה "error" בתוך גוף הודעת הלוג.
+
+* **`log show --predicate 'processImagePath CONTAINS "mdmclient"'`**
+  איתור כל הלוגים שנוצרו על ידי תהליך ה-MDM הארגוני (מצוין לזיהוי בעיות סנכרון פרופילים).
+
+### ניהול ארכיונים
+
+* **`sudo log collect --last 1h`**
+  איסוף לוגים מהשעה האחרונה אל תוך קובץ `.logarchive` שניתן לפתוח ולנתח במחשב אחר בעזרת Console.app.
+
+* **`log erase`**
+  מחיקת כל הלוגים ההיסטוריים שנשמרו בדיסק (דורש הרשאות שורש).
+
+---
+
+## יצירת וניתוח Sysdiagnose
+
+> *← Sysdiagnose נלמד בשיעור 15 (Diagnostics) כאוסף כל המידע לצורך בידוד תקלות — כאן לומדים מה מסתתר בתוך הקובץ הזה וכיצד לקרוא את הלוגים שבדאי.*
+
+כאשר מתמודדים עם תקלות מערכת עמוקות (קריסות Kernel, ניתוקי רשת רנדומליים, או תקלות התקנת MDM שאינן נפתרות), הפקת Sysdiagnose היא השלב הראשון באסקלציה.
+
+* **יצירת Sysdiagnose דרך המסוף:**
+
+  `sudo sysdiagnose -f ~/Desktop`
+  מייצר דוח Sysdiagnose מלא ושומר אותו ישירות לשולחן העבודה. התהליך לוקח מספר דקות.
+
+* **יצירת Sysdiagnose באמצעות מקלדת (ללא מסוף):**
+
+  הקשה על השילוב `Shift-Control-Option-Command-Period (.)` מפעילה יצירת Sysdiagnose ברקע. המסך יהבהב לרגע כאישור. הקובץ יישמר בנתיב: `/var/tmp/`.
+
+* **יצירת Sysdiagnose בתוך macOS Recovery:**
+
+  במידה והמחשב לא עולה, ניתן להיכנס ל-Recovery, לפתוח את ה-Terminal, ולהקיש `sysdiagnose`. הקובץ יישמר על התקן USB מחובר או בכונן ה-Data במידה ויש גישה אליו.
+
+* **קבלת עזרה והגדרות נוספות:**
+
+  `sysdiagnose -h`
+  מציג את תפריט העזרה המלא, בו ניתן למצוא דגלים לאיסוף מידע ספציפי (למשל רק מידע הקשור לרשת או ל-Wi-Fi).
+
+---
+
+## פקודות אבחון וניטור משאבים (Activity & System Monitoring)
+
+בעוד ש-Activity Monitor הגרפי מצוין לרוב המשתמשים, אנשי תמיכה משתמשים בכלים מתקדמים בשורת הפקודה כדי לנטר פעילות בזמן אמת, במיוחד כשהממשק הגרפי קופא.
+
+### ניטור מעבד וזיכרון (`top`)
+הפקודה `top` מספקת תצוגה חיה ומתעדכנת של ניצול המשאבים.
+
+* **`top`**
+  מציג את טבלת התהליכים וניצול המשאבים הכללי (מעבד, זיכרון, עומס מערכת).
+
+* **`top -u`**
+  ממיין את התהליכים לפי צריכת ה-CPU שלהם מהגבוה לנמוך (מצוין לאיתור "זוללי סוללה" או תהליכים שתקועים בלולאה אינסופית).
+
+* **`top -o mem`**
+  ממיין את התהליכים לפי שימוש בזיכרון (Memory Pressure).
+
+* *(הערה: כדי לצאת מהתצוגה החיה של `top`, יש להקיש על האות `q`).*
+
+### מעקב אחר מערכת הקבצים (`fs_usage`)
+כלי חזק במיוחד המציג בזמן אמת את קריאות המערכת (System Calls) לדיסק. מצוין למקרים בהם אפליקציה מבצעת פעולות כתיבה מרובות שגורמות להאטה (כמו אנטי-וירוסים ארגוניים).
+
+* **`sudo fs_usage`**
+  מציג את כל הפעילות של מערכת הקבצים בזמן אמת (זהירות - מציג המון מידע רץ).
+
+* **`sudo fs_usage -w`**
+  מרחיב את התצוגה כך שהנתיבים יוצגו במלואם מעבר למגבלת רוחב החלון.
+
+* **`sudo fs_usage -f filesys ProcessName`**
+  מסנן את הפעילות ומציג אך ורק קריאות דיסק של תהליך ספציפי (החלף את `ProcessName` בשם התהליך, למשל `mdmclient`).
+
+---
+
+## תיבול ארגוני: זיהוי תקלות MDM ב-Console
+
+> *← בשיעור 08 (Terminal) ראינו `log stream --predicate 'process == "mdmclient"'` בפעולה — ה-Console.app מספק בדיוק אותה צפייה בממשק גרפי ללא שורת פקודה.*
+
+כאשר שרת ה-MDM דוחף פרופיל הגדרות (למשל הגדרות 802.1x ל-WiFi ארגוני) והתהליך נכשל, חיפוש שגיאות פשוט ב-Console.app דורש מיקוד.
+
+1. פתחו את **Console.app**.
+2. התחילו **Start** (איסוף לוגים חי).
+3. בשורת החיפוש (Search), הקלידו `apsd` או `mdmclient` ולחצו Enter (וודאו שהוא מוגדר כ-**Process** או **Any**).
+4. שלחו מחדש את פקודת ההתקנה מה-MDM.
+5. כל הפעולות של סוכן ה-MDM המקומי יופיעו. חפשו שורות המסומנות בצהוב (Fault) או אדום (Error) שמעידות על שגיאת תעודות (Certificate Trust) או חסימת פיירוול שמונעת גישה לשרת (שרתי אפל APNs בפורט 5223 או אל ה-MDM עצמו).
+
+
+---
+
+## חידושי איסוף לוגים מרחוק ב-macOS 27 (Golden Gate)
+
+* **איסוף לוגים מרוחק לקריאות AppleCare דרך ה-MDM (Remote Log Collection):** אחת המשימות המתסכלות ביותר בתמיכת Tier 3 הייתה להדריך משתמש קצה בטלפון להפיק קובץ `sysdiagnose` כבד ולשלוח אותו. ב-**macOS 27** (במכשירים מפוקחים - Supervised), מנהל ה-IT יכול **ליזום מרחוק דרך שרת הניהול איסוף לוגי אבחון הנדרשים לקריאת שירות של AppleCare** ללא מאמץ מצד המשתמש!
+
+!!! info "בשטח עם ציי macOS 26 (Tahoe)"
+    במחשבי **macOS 26** (או במחשבים שאינם Supervised), הפקת `sysdiagnose` עדיין מחייבת הרצה מקומית בממשק המשתמש (`Activity Monitor`), בקיצור המקלדת או דרך סקריפט SSH/MDM מותאם אישית.
+
+---
+
+## קישורים מומלצים ולקריאה נוספת
+
+* [View log messages and reports in Console on Mac](https://support.apple.com/guide/console/welcome/mac) - המדריך הרשמי לשימוש באפליקציית ה-Console לקריאת לוגים במק.
+* [A brief history of logs and Console](https://eclecticlight.co/2024/12/21/a-brief-history-of-logs-and-console/) - סקירה מעניינת על האבולוציה של הדרך בה נשמרו הלוגים במק מ-2016 ועד היום.
+* [Find what you want in the log](https://eclecticlight.co/2026/08/19/find-what-you-want-in-the-log/) - מדריך מקצועי מעודכן לאיתור מידע ממוקד ב-Unified Log, שימוש ב-LogUI ובניית Predicates.
+* [How to find what you want in the log](https://eclecticlight.co/2021/11/04/how-to-find-what-you-want-in-the-log/) - מדריך קלאסי למתקדמים לניתוח הלוג המאוחד.
+
+## סרטון סיכום
+
+<!-- סרטון סיכום מתוך YouTube -->
+<div style="margin-bottom: 20px; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <iframe width="100%" height="450" src="https://www.youtube.com/embed/SYAGmWsJksQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+---
+
+## עזרים ויזואליים
+
+!!! tip "המחשה ויזואלית (עזר לתלמיד)"
+    תמונות אלו ממחישות את הממשק או המנגנון הרלוונטי לנושא השיעור.
+
+![Save_and_read_the_panic_log_p1_41](../assets/images/Lesson_16/L16_DeepDive_Save_and_read_the_panic_log_p1_41.png)
+![Slide69_image82](../assets/images/Lesson_16/L16_LegacySlide_Slide69_image82.png)
+![Slide69_image83](../assets/images/Lesson_16/L16_LegacySlide_Slide69_image83.png)
+![GG27 Console App](../assets/images/GoldenGate_UI/GG27_27-Golden-Gate-Console.jpg)
