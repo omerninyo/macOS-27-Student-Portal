@@ -1,7 +1,7 @@
 site_name: "פורטל הלימודים של Wediggit: קורס תמיכה וניהול macOS 27"
 site_description: "Student Portal for the Wediggit macOS 27 Golden Gate Enterprise Course"
 site_author: "Wediggit"
-site_url: "https://omerninyo.github.io/macOS-27-Student-Portal/"
+site_url: "https://macos-27-student-portal.netlify.app/"
 
 theme:
   name: material
