@@ -6,3 +6,6 @@ venv/
 .netlify/
 __pycache__/
 *.pyc
+
+* 2.*
+* 3.*
